@@ -4,7 +4,7 @@ A hybrid sanitation verification platform for humanitarian contexts that maintai
 
 ---
 
-## ## Core Capabilities
+## Core Capabilities
 
 ### Health Scoring (0–3, Explainable)
 
@@ -28,7 +28,7 @@ A hybrid sanitation verification platform for humanitarian contexts that maintai
 
 ---
 
-## ## Tech Stack
+## Tech Stack
 
 * **Frontend**: Next.js 14 (App Router), TypeScript
 * **Backend / DB**: Supabase (PostgreSQL, RLS, Edge Functions)
@@ -38,7 +38,7 @@ A hybrid sanitation verification platform for humanitarian contexts that maintai
 
 ---
 
-## ## Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
@@ -84,7 +84,7 @@ App runs at `http://localhost:3000`.
 
 ---
 
-## ## Health Scoring Summary
+## Health Scoring Summary
 
 * **Base score**: 3
 * **Volunteer verification**:
@@ -106,7 +106,7 @@ App runs at `http://localhost:3000`.
 
 ---
 
-## ## API Overview
+## API Overview
 
 * **Bathrooms**: `GET /api/bathrooms`, `GET /api/bathrooms/[id]`
 * **Verification**: `POST /api/verification`
@@ -118,7 +118,7 @@ App runs at `http://localhost:3000`.
 
 ---
 
-## ## Database (Key Tables)
+## Database (Key Tables)
 
 * **bathrooms**: metadata, health score (0–3), status
 * **verifications**: volunteer checks
@@ -129,7 +129,7 @@ RLS enabled; public read, service role for writes.
 
 ---
 
-## ## Project Structure (Simplified)
+## Project Structure (Simplified)
 
 ```
 app/        # Pages & API routes
@@ -140,7 +140,7 @@ supabase/   # Schema & seeds
 
 ---
 
-## ## Deployment
+## Deployment
 
 1. Push to GitHub
 2. Import into Vercel
@@ -149,7 +149,7 @@ supabase/   # Schema & seeds
 
 ---
 
-## ## Production Extensions
+## Production Extensions
 
 * Supabase Auth & role-based access
 * Realtime updates & notifications
@@ -158,7 +158,7 @@ supabase/   # Schema & seeds
 
 ---
 
-## ## Credits
+## Credits
 
 Built using the following open-source technologies:
 
