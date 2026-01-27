@@ -6,12 +6,6 @@ A hybrid sanitation verification system that maintains a trusted, continuously u
 
 **SanoCheck** is a verification and prioritization system designed for humanitarian contexts to maintain reliable bathroom facilities. The system uses rule-based, explainable health scoring (0-3 scale) to prioritize volunteer inspections and maintenance dispatch. It provides multiple access points including admin dashboards for volunteers, public displays for community centers, and an interactive demo mode for demonstrations.
 
-**This is NOT:**
-- Real-time monitoring
-- Predictive AI
-- Fully automated maintenance
-- Crowdsourced decision-making
-
 ## ✨ Key Features
 
 ### 🎯 Core Features
@@ -599,29 +593,6 @@ To generate 24 hours of sensor data for bathrooms:
    - Score trend analysis
    - Maintenance request analytics
 
-## 🎯 Success Criteria
-
-Judges should be able to:
-- ✅ Run the project (`npm install && npm run dev`)
-- ✅ Click buttons and see scores change in real-time
-- ✅ See priorities update automatically
-- ✅ Understand exactly why the system made a decision (explainable scoring)
-- ✅ Access all user views (Admin, Public, Demo, Chatbot)
-- ✅ Use demo mode to simulate scenarios
-- ✅ View sensor data graphs with 24-hour readings
-- ✅ Search and favorite bathrooms on public display
-
-## 🚫 Explicit Non-Goals
-
-These features were intentionally NOT implemented:
-- ❌ Real-time monitoring
-- ❌ Predictive failure AI
-- ❌ Crowdsourced decision-making
-- ❌ Payments or incentives
-- ❌ Routing optimization
-- ❌ Continuous sensor streams
-- ❌ Resident reporting dashboard (removed)
-
 ## 📝 Credits & Attribution
 
 ### Technologies Used
@@ -642,14 +613,6 @@ These features were intentionally NOT implemented:
 This project was built for the **CMUQ Lifelines 2026 Hackathon**.
 
 Built as an MVP prototype for demonstration and judging purposes.
-
----
-
-## 📞 Contact
-
-For questions or support:
-- **Phone**: +967 770 755 368
-- **Project**: SanoCheck - Smart Sanitation Verification & Dispatch System
 
 ---
 
