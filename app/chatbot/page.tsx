@@ -25,13 +25,13 @@ export default function Chatbot() {
       try {
         const res = await fetch('/api/bathrooms');
         const bathrooms = await res.json();
-        const usable = bathrooms.filter((b: any) => b.status === 'usable');
+        const usable = bathrooms.filter((b: any) => b.status === 'verified_usable');
         
         if (usable.length === 0) {
           botResponse = 'Sorry, there are no verified usable bathrooms at this time. Please check back later or contact an administrator.';
         } else {
           const nearest = usable[0]; // Simplified - would use actual location in production
-          botResponse = `The nearest verified usable bathroom is ${nearest.id} in Zone ${nearest.zone}. ${nearest.location || ''} It has a health score of ${nearest.score}/100.`;
+          botResponse = `The nearest verified usable bathroom is ${nearest.id} in Zone ${nearest.zone}. ${nearest.location || ''} It has a health score of ${nearest.score}/3.`;
         }
       } catch (error) {
         botResponse = 'I encountered an error. Please try again later.';
@@ -51,7 +51,7 @@ export default function Chatbot() {
         botResponse = 'I encountered an error. Please try again later.';
       }
     } else if (lowerInput.includes('report') || lowerInput.includes('broken') || lowerInput.includes('issue')) {
-      botResponse = 'I cannot accept reports. Please use the Resident Dashboard to report bathroom status, or contact an administrator for maintenance issues.';
+      botResponse = 'I cannot accept reports. Please contact an administrator for maintenance issues or bathroom status updates.';
     } else {
       botResponse = 'I can help you find usable bathrooms or check volunteer tasks. Try asking: "Where is the nearest usable toilet?" or "What should I check today?"';
     }
@@ -60,14 +60,24 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">🤖 Chatbot</h1>
-          <Link href="/" className="text-blue-600 hover:underline">← Back to Home</Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Navigation Bar */}
+      <header className="bg-[#003366] text-white py-4">
+        <div className="max-w-2xl mx-auto px-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">🤖 Chatbot</h1>
+            <nav className="flex gap-6 text-sm">
+              <Link href="/" className="hover:underline">Home</Link>
+              <Link href="/admin" className="hover:underline">Admin</Link>
+              <Link href="/public" className="hover:underline">Public</Link>
+              <Link href="/demo" className="hover:underline">Demo</Link>
+            </nav>
+          </div>
         </div>
+      </header>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-4">
+      <div className="max-w-2xl mx-auto px-6 py-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-4">
           <div className="space-y-4 h-96 overflow-y-auto mb-4">
             {messages.map((msg, idx) => (
               <div
@@ -78,7 +88,7 @@ export default function Chatbot() {
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-800'
+                      : 'bg-gray-100 text-gray-900'
                   }`}
                 >
                   {msg.content}
@@ -98,16 +108,29 @@ export default function Chatbot() {
             />
             <button
               onClick={handleSend}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-6 py-2 text-blue-600 border border-gray-300 rounded-lg hover:border-blue-600"
             >
               Send
             </button>
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-700">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-700 mb-6">
           <p className="font-semibold mb-2">💡 Note:</p>
           <p>This chatbot is read-only and cannot accept reports. It can help you find usable bathrooms and check volunteer tasks.</p>
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="pt-6 border-t border-gray-200 text-center">
+          <div className="flex justify-center gap-4 text-sm">
+            <Link href="/admin" className="text-blue-600 hover:underline">👷 Admin Dashboard</Link>
+            <span className="text-gray-400">•</span>
+            <Link href="/public" className="text-blue-600 hover:underline">📺 Public Display</Link>
+            <span className="text-gray-400">•</span>
+            <Link href="/demo" className="text-blue-600 hover:underline">🎬 Demo Mode</Link>
+            <span className="text-gray-400">•</span>
+            <Link href="/" className="text-gray-700 hover:underline">🏠 Home</Link>
+          </div>
         </div>
       </div>
     </div>

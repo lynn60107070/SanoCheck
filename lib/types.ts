@@ -1,7 +1,7 @@
 // Core data models for SanoCheck system
 
 export type BathroomType = "male" | "female" | "accessible";
-export type BathroomStatus = "usable" | "needs_check" | "flagged" | "unusable";
+export type BathroomStatus = "verified_usable" | "flagged" | "verified_unusable";
 
 export interface Bathroom {
   id: string; // e.g. "A-03"
@@ -9,7 +9,7 @@ export interface Bathroom {
   type: BathroomType;
   hasSensor: boolean;
   lastVerifiedAt: number | null; // timestamp
-  score: number; // 0-100
+  score: number; // 0-3 (whole numbers only)
   status: BathroomStatus;
   location?: string; // optional description
 }
@@ -29,9 +29,15 @@ export interface ResidentSignal {
   timestamp: number;
 }
 
+export type SensorType = "gas" | "water" | "humidity";
+export type GasType = "H2S" | "NH3";
+
 export interface SensorReading {
   bathroomId: string;
-  gasLevel: number; // ppm or similar unit
+  sensorType: SensorType;
+  gasType?: GasType; // Only for gas sensors
+  value: number; // ppm for gas, L/min for water, % for humidity
+  unit?: string; // e.g., 'ppm', '%', 'L/min'
   timestamp: number;
 }
 
@@ -53,8 +59,18 @@ export interface ScoringConfig {
   cloggedPenalty: number;
   unusablePenalty: number;
   daysSinceVerificationPenalty: number; // per day
-  gasThreshold: number; // gas level threshold
+  // Gas sensor thresholds
+  gasThreshold: number; // gas level threshold (ppm)
   gasPenalty: number;
+  // Water sensor thresholds
+  waterFlowThreshold: number; // minimum water flow (L/min) - below this indicates no/low water
+  noWaterSensorPenalty: number; // penalty if sensor detects no/low water
+  // Humidity sensor thresholds
+  humidityOptimalMin: number; // optimal humidity range min (%)
+  humidityOptimalMax: number; // optimal humidity range max (%)
+  humidityHighPenalty: number; // penalty for humidity above optimal (indicates poor ventilation)
+  humidityLowPenalty: number; // penalty for humidity below optimal (indicates dryness)
+  // Resident signals
   residentUsableBonus: number; // small bonus per confirmation
   residentUnusablePenalty: number;
 }
@@ -66,8 +82,18 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
   cloggedPenalty: 40,
   unusablePenalty: 50,
   daysSinceVerificationPenalty: 10,
-  gasThreshold: 50, // example threshold
+  // Gas sensor (H2S/NH3 in ppm)
+  gasThreshold: 50, // ppm - above this indicates poor air quality
   gasPenalty: 20,
+  // Water sensor (flow rate in L/min)
+  waterFlowThreshold: 0.5, // L/min - below this indicates no/low water flow
+  noWaterSensorPenalty: 30, // penalty if sensor detects no/low water
+  // Humidity sensor (relative humidity %)
+  humidityOptimalMin: 30, // % - optimal range for bathroom
+  humidityOptimalMax: 60, // % - optimal range for bathroom
+  humidityHighPenalty: 15, // penalty for humidity > 60% (poor ventilation, mold risk)
+  humidityLowPenalty: 5, // penalty for humidity < 30% (too dry, but less critical)
+  // Resident signals
   residentUsableBonus: 2,
   residentUnusablePenalty: 15,
 };

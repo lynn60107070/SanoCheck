@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { addResidentSignal, initializeStore, ResidentSignal } from '@/lib/store';
+import { addResidentSignal } from '@/lib/db';
+import { ResidentSignal } from '@/lib/types';
 
 export async function POST(request: Request) {
   try {
-    initializeStore();
     const body = await request.json();
     
     const signal: ResidentSignal = {
@@ -19,10 +19,11 @@ export async function POST(request: Request) {
       );
     }
 
-    addResidentSignal(signal);
+    await addResidentSignal(signal);
     
     return NextResponse.json({ success: true, signal });
   } catch (error) {
+    console.error('Error adding resident signal:', error);
     return NextResponse.json(
       { error: 'Invalid request' },
       { status: 400 }

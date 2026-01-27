@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
-import { getAllMaintenanceRequests, createMaintenanceRequest, initializeStore } from '@/lib/store';
+import { getAllMaintenanceRequests, createMaintenanceRequest } from '@/lib/db';
 
 export async function GET() {
-  initializeStore();
-  const requests = getAllMaintenanceRequests();
-  return NextResponse.json(requests);
+  try {
+    const requests = await getAllMaintenanceRequests();
+    return NextResponse.json(requests);
+  } catch (error) {
+    console.error('Error fetching maintenance requests:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch maintenance requests' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    initializeStore();
     const body = await request.json();
     
-    const request_obj = createMaintenanceRequest(
+    const request_obj = await createMaintenanceRequest(
       body.bathroomId,
       body.issueType,
       body.contactName,
@@ -21,6 +27,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ success: true, request: request_obj });
   } catch (error) {
+    console.error('Error creating maintenance request:', error);
     return NextResponse.json(
       { error: 'Invalid request' },
       { status: 400 }

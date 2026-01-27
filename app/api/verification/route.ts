@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { addVerification, initializeStore, VolunteerVerification } from '@/lib/store';
+import { addVerification } from '@/lib/db';
+import { VolunteerVerification } from '@/lib/types';
 
 export async function POST(request: Request) {
   try {
-    initializeStore();
     const body = await request.json();
     
     const verification: VolunteerVerification = {
@@ -15,10 +15,11 @@ export async function POST(request: Request) {
       volunteerName: body.volunteerName,
     };
 
-    addVerification(verification);
+    await addVerification(verification);
     
     return NextResponse.json({ success: true, verification });
   } catch (error) {
+    console.error('Error adding verification:', error);
     return NextResponse.json(
       { error: 'Invalid request' },
       { status: 400 }
