@@ -20,7 +20,7 @@ export default function AdminDashboard() {
   const [selectedZone, setSelectedZone] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'verification' | 'maintenance' | 'sensors'>('verification');
+  const [activeTab, setActiveTab] = useState<'verification' | 'maintenance' | 'sensors' | 'liveSensors'>('verification');
   
   // Sensor data view state
   const [selectedSensorBathroom, setSelectedSensorBathroom] = useState<string>('');
@@ -37,6 +37,21 @@ export default function AdminDashboard() {
     humidity: true,
   });
 
+  // Live sensor data view state (same features as Sensor Data tab)
+  const [selectedDemoSensorBathroom, setSelectedDemoSensorBathroom] = useState<string>('');
+  const [demoSensorDate, setDemoSensorDate] = useState<string>(() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  });
+  const [demoSensorData, setDemoSensorData] = useState<any>(null);
+  const [loadingDemoSensorData, setLoadingDemoSensorData] = useState(false);
+  const [selectedDemoTime, setSelectedDemoTime] = useState<number | null>(null);
+  const [demoSensorFilters, setDemoSensorFilters] = useState({
+    gas: true,
+    water: true,
+    humidity: true,
+  });
+
   useEffect(() => {
     loadData();
   }, [selectedZone]);
@@ -47,6 +62,13 @@ export default function AdminDashboard() {
       loadSensorData(selectedSensorBathroom, sensorDate);
     }
   }, [selectedSensorBathroom, activeTab, sensorDate]);
+
+  // Load live sensor data when bathroom, date, or tab changes
+  useEffect(() => {
+    if (selectedDemoSensorBathroom && activeTab === 'liveSensors') {
+      loadDemoSensorData(selectedDemoSensorBathroom, demoSensorDate);
+    }
+  }, [selectedDemoSensorBathroom, activeTab, demoSensorDate]);
 
   const loadSensorData = async (bathroomId: string, dateStr?: string) => {
     setLoadingSensorData(true);
@@ -126,6 +148,41 @@ export default function AdminDashboard() {
       setTimeout(() => {
         setVerificationMessage('');
       }, 3000);
+    }
+  };
+
+  const loadDemoSensorData = async (bathroomId: string, dateStr?: string) => {
+    setLoadingDemoSensorData(true);
+    setSelectedDemoTime(null);
+    try {
+      const url = dateStr
+        ? `/api/sensor-data/${bathroomId}?date=${encodeURIComponent(dateStr)}&t=${Date.now()}`
+        : `/api/sensor-data/${bathroomId}?t=${Date.now()}`;
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Failed to fetch sensor data');
+      const data = await response.json();
+      setDemoSensorData(data);
+    } catch (error) {
+      console.error('Error loading live sensor data:', error);
+      setDemoSensorData(null);
+    } finally {
+      setLoadingDemoSensorData(false);
+    }
+  };
+
+  const generateDemoSensorData = async (bathroomId: string) => {
+    if (!bathroomId) return;
+    setVerificationMessage('⏳ Loading live sensor data...');
+    try {
+      setDemoSensorData(null);
+      setSelectedDemoTime(null);
+      await loadDemoSensorData(bathroomId, demoSensorDate);
+      setVerificationMessage('✅ Live sensor data refreshed');
+      setTimeout(() => setVerificationMessage(''), 2000);
+    } catch (error) {
+      console.error('Error loading live sensor data:', error);
+      setVerificationMessage('❌ Error loading live sensor data.');
+      setTimeout(() => setVerificationMessage(''), 3000);
     }
   };
 
@@ -350,6 +407,16 @@ export default function AdminDashboard() {
               }`}
             >
               📊 Sensor Data
+            </button>
+            <button
+              onClick={() => setActiveTab('liveSensors')}
+              className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+                activeTab === 'liveSensors'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              📡 Live Sensor Data
             </button>
           </div>
         </div>
@@ -892,6 +959,316 @@ export default function AdminDashboard() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
                   <p>Select a bathroom with sensors attached to view sensor data.</p>
                   <p className="text-sm mt-2">Sensor data is pre-loaded via SQL. Use the "Load Data" button to refresh the display.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Live Sensor Data View - same features as Sensor Data tab */}
+        {activeTab === 'liveSensors' && (
+          <div className="space-y-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-900">📡 Live Sensor Data Dashboard</h2>
+              <p className="text-gray-700 mb-4">
+                View sensor readings for a specific day or the past 24 hours for predictive maintenance (live)
+              </p>
+              
+              <div className="mb-6">
+                <div className="flex flex-col md:flex-row gap-4 items-end flex-wrap">
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-semibold mb-2 text-gray-900">Select Bathroom:</label>
+                    <select
+                      value={selectedDemoSensorBathroom}
+                      onChange={(e) => setSelectedDemoSensorBathroom(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                    >
+                      <option value="">-- Select a bathroom --</option>
+                      {bathrooms
+                        .filter(b => b.hasSensor)
+                        .map(bathroom => (
+                          <option key={bathroom.id} value={bathroom.id}>
+                            {bathroom.id} - Zone {bathroom.zone} ({bathroom.location || 'No location'})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-gray-900">Date:</label>
+                    <input
+                      type="date"
+                      value={demoSensorDate}
+                      onChange={(e) => setDemoSensorDate(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      setDemoSensorDate(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+                    }}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:border-gray-500 font-medium whitespace-nowrap"
+                  >
+                    Today
+                  </button>
+                  {selectedDemoSensorBathroom && (
+                    <button
+                      onClick={() => generateDemoSensorData(selectedDemoSensorBathroom)}
+                      className="px-4 py-2 text-blue-600 border border-gray-300 rounded hover:border-blue-600 font-semibold whitespace-nowrap"
+                    >
+                      📊 Load Data
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {loadingDemoSensorData && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading sensor data...</p>
+                </div>
+              )}
+
+              {!loadingDemoSensorData && demoSensorData && (
+                <>
+                  <div className="mb-4 flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={demoSensorFilters.gas}
+                        onChange={(e) => setDemoSensorFilters({ ...demoSensorFilters, gas: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-medium">Gas (H₂S/NH₃)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={demoSensorFilters.water}
+                        onChange={(e) => setDemoSensorFilters({ ...demoSensorFilters, water: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-medium">Water Flow</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={demoSensorFilters.humidity}
+                        onChange={(e) => setDemoSensorFilters({ ...demoSensorFilters, humidity: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-medium">Humidity</span>
+                    </label>
+                  </div>
+
+                  {demoSensorData.graphData && demoSensorData.graphData.length > 0 ? (
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold">
+                          Sensor Readings{demoSensorDate ? ` — ${demoSensorDate}` : ' (Past 24 Hours)'} — {demoSensorData.graphData.length} data points
+                        </h3>
+                        {demoSensorData.debug && (
+                          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            Source: {demoSensorData.debug.dataSource} | 
+                            DB Readings: {demoSensorData.debug.readingsInLast24h} | 
+                            Gas: {demoSensorData.debug.gasReadingsCount} | 
+                            Water: {demoSensorData.debug.waterReadingsCount} | 
+                            Humidity: {demoSensorData.debug.humidityReadingsCount}
+                          </div>
+                        )}
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4" style={{ height: '400px' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            key={`live-${selectedDemoSensorBathroom}-${demoSensorData.graphData?.length || 0}-${Date.now()}`}
+                            data={demoSensorData.graphData}
+                            onClick={(e: any) => {
+                              if (e && e.activePayload && e.activePayload.length > 0) {
+                                const payload = e.activePayload[0].payload;
+                                if (payload && payload.timestamp) setSelectedDemoTime(payload.timestamp);
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="time" angle={-45} textAnchor="end" height={80} interval="preserveStartEnd" />
+                            <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} domain={[0, 100]} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', cursor: 'pointer' }}
+                              formatter={(value: any, name: string, props: any) => {
+                                const payload = props.payload;
+                                if (name === 'Gas') return [`${payload?.gas?.toFixed(1) || 'N/A'}%`, 'Gas'];
+                                if (name === 'Water') return [`${payload?.water?.toFixed(1) || 'N/A'}%`, 'Water'];
+                                if (name === 'Humidity') return [`${payload?.humidity?.toFixed(1) || 'N/A'}%`, 'Humidity'];
+                                return [value, name];
+                              }}
+                              labelFormatter={(label) => `Time: ${label}`}
+                            />
+                            <Legend />
+                            {demoSensorFilters.gas && <Line type="monotone" dataKey="gas" stroke="#ef4444" strokeWidth={2} name="Gas" dot={{ r: 4, fill: '#ef4444' }} activeDot={{ r: 7, fill: '#ef4444', stroke: '#dc2626', strokeWidth: 2 }} />}
+                            {demoSensorFilters.water && <Line type="monotone" dataKey="water" stroke="#3b82f6" strokeWidth={2} name="Water" dot={{ r: 4, fill: '#3b82f6' }} activeDot={{ r: 7, fill: '#3b82f6', stroke: '#2563eb', strokeWidth: 2 }} />}
+                            {demoSensorFilters.humidity && <Line type="monotone" dataKey="humidity" stroke="#10b981" strokeWidth={2} name="Humidity" dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 7, fill: '#10b981', stroke: '#059669', strokeWidth: 2 }} />}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">💡 Click on a point in the graph to view readings at that specific time</p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
+                      <p>No sensor data available{demoSensorDate ? ` for ${demoSensorDate}` : ' for the past 24 hours'}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white border-2 border-red-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-red-700">Gas Sensor (H₂S/NH₃)</h4>
+                        <span className="text-2xl">💨</span>
+                      </div>
+                      {selectedDemoTime ? (
+                        (() => {
+                          const oneHour = 60 * 60 * 1000;
+                          const closest = demoSensorData.readings.gas
+                            .map((r: any) => ({ ...r, diff: Math.abs(r.timestamp - selectedDemoTime) }))
+                            .filter((r: any) => r.diff < oneHour)
+                            .sort((a: any, b: any) => a.diff - b.diff)[0];
+                          return closest ? (
+                            <>
+                              <p className="text-3xl font-bold text-red-600 mb-1">{closest.value.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">{new Date(closest.timestamp).toLocaleString()}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No reading near selected time</p>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          {demoSensorData.averages.gas !== null ? (
+                            <>
+                              <p className="text-3xl font-bold text-red-600 mb-1">{demoSensorData.averages.gas.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">24h Average</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No data available</p>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="bg-white border-2 border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-blue-700">Water Flow</h4>
+                        <span className="text-2xl">💧</span>
+                      </div>
+                      {selectedDemoTime ? (
+                        (() => {
+                          const oneHour = 60 * 60 * 1000;
+                          const closest = demoSensorData.readings.water
+                            .map((r: any) => ({ ...r, diff: Math.abs(r.timestamp - selectedDemoTime) }))
+                            .filter((r: any) => r.diff < oneHour)
+                            .sort((a: any, b: any) => a.diff - b.diff)[0];
+                          return closest ? (
+                            <>
+                              <p className="text-3xl font-bold text-blue-600 mb-1">{closest.value.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">{new Date(closest.timestamp).toLocaleString()}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No reading near selected time</p>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          {demoSensorData.averages.water !== null ? (
+                            <>
+                              <p className="text-3xl font-bold text-blue-600 mb-1">{demoSensorData.averages.water.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">24h Average</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No data available</p>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-green-700">Humidity</h4>
+                        <span className="text-2xl">🌫️</span>
+                      </div>
+                      {selectedDemoTime ? (
+                        (() => {
+                          const oneHour = 60 * 60 * 1000;
+                          const closest = demoSensorData.readings.humidity
+                            .map((r: any) => ({ ...r, diff: Math.abs(r.timestamp - selectedDemoTime) }))
+                            .filter((r: any) => r.diff < oneHour)
+                            .sort((a: any, b: any) => a.diff - b.diff)[0];
+                          return closest ? (
+                            <>
+                              <p className="text-3xl font-bold text-green-600 mb-1">{closest.value.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">{new Date(closest.timestamp).toLocaleString()}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No reading near selected time</p>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          {demoSensorData.averages.humidity !== null ? (
+                            <>
+                              <p className="text-3xl font-bold text-green-600 mb-1">{demoSensorData.averages.humidity.toFixed(1)} <span className="text-lg">%</span></p>
+                              <p className="text-xs text-gray-500">24h Average</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-3xl font-bold text-gray-400 mb-1">N/A</p>
+                              <p className="text-xs text-gray-500">No data available</p>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedDemoTime && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setSelectedDemoTime(null)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        Reset to 24h Average
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!loadingDemoSensorData && !demoSensorData && selectedDemoSensorBathroom && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+                  <p className="font-semibold mb-2">No sensor data available for this bathroom{demoSensorDate ? ` on ${demoSensorDate}` : ' in the past 24 hours'}.</p>
+                  <p className="text-sm">To generate sensor data, run the SQL function in Supabase:</p>
+                  <code className="block mt-2 p-2 bg-yellow-100 rounded text-xs">
+                    SELECT generate_sensor_data_for_bathroom('{selectedDemoSensorBathroom}');
+                  </code>
+                </div>
+              )}
+
+              {!selectedDemoSensorBathroom && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
+                  <p>Select a bathroom with sensors attached to view live sensor data.</p>
+                  <p className="text-sm mt-2">Sensor data is pre-loaded via SQL. Use the &quot;Load Data&quot; button to refresh the display.</p>
                 </div>
               )}
             </div>
