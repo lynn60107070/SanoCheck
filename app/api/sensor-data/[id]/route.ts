@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSensorReadingsByBathroom } from '@/lib/db';
+import { getSensorReadingsByBathroom, getSensorReadingsByBathroomForDate } from '@/lib/db';
 import { SensorReading } from '@/lib/types';
 
 export async function GET(
@@ -7,17 +7,25 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const allReadings = await getSensorReadingsByBathroom(params.id);
-    
-    // Log data source for debugging
-    console.log(`[Sensor Data API] Fetching data for bathroom: ${params.id}`);
-    console.log(`[Sensor Data API] Total readings from database: ${allReadings.length}`);
-    
-    // Filter to last 24 hours (with 1 hour buffer to account for any timing issues)
-    const twentyFourHoursAgo = Date.now() - (25 * 60 * 60 * 1000); // 25 hours to be safe
-    const recentReadings = allReadings.filter(r => r.timestamp >= twentyFourHoursAgo);
-    
-    console.log(`[Sensor Data API] Readings in last 24 hours: ${recentReadings.length}`);
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date'); // YYYY-MM-DD for a specific day
+
+    let recentReadings: SensorReading[];
+    let dataSourceLabel: string;
+
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      recentReadings = await getSensorReadingsByBathroomForDate(params.id, dateParam);
+      dataSourceLabel = `sensor_readings for ${dateParam}`;
+      console.log(`[Sensor Data API] Fetching data for bathroom: ${params.id} on date: ${dateParam}`);
+    } else {
+      const allReadings = await getSensorReadingsByBathroom(params.id);
+      const twentyFourHoursAgo = Date.now() - (25 * 60 * 60 * 1000);
+      recentReadings = allReadings.filter(r => r.timestamp >= twentyFourHoursAgo);
+      dataSourceLabel = 'sensor_readings (last 24h)';
+      console.log(`[Sensor Data API] Fetching data for bathroom: ${params.id} (last 24h)`);
+      console.log(`[Sensor Data API] Total readings from database: ${allReadings.length}`);
+    }
+
     if (recentReadings.length > 0) {
       console.log(`[Sensor Data API] First reading: ${new Date(recentReadings[recentReadings.length - 1].timestamp).toISOString()}`);
       console.log(`[Sensor Data API] Last reading: ${new Date(recentReadings[0].timestamp).toISOString()}`);
@@ -116,14 +124,16 @@ export async function GET(
       graphData,
       // Debug info
       debug: {
-        totalReadingsFromDB: allReadings.length,
+        totalReadingsFromDB: recentReadings.length,
         readingsInLast24h: recentReadings.length,
         gasReadingsCount: gasReadings.length,
         waterReadingsCount: waterReadings.length,
         humidityReadingsCount: humidityReadings.length,
         graphDataPoints: graphData.length,
-        dataSource: 'sensor_readings table in Supabase',
-        query: `SELECT * FROM sensor_readings WHERE bathroom_id = '${params.id}' ORDER BY created_at DESC`
+        dataSource: dataSourceLabel,
+        query: dateParam
+          ? `sensor_readings WHERE bathroom_id = '${params.id}' AND created_at BETWEEN '${dateParam}T00:00:00Z' AND '${dateParam}T23:59:59Z'`
+          : `sensor_readings WHERE bathroom_id = '${params.id}' (last 24h)`
       }
     };
     

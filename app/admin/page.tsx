@@ -24,6 +24,10 @@ export default function AdminDashboard() {
   
   // Sensor data view state
   const [selectedSensorBathroom, setSelectedSensorBathroom] = useState<string>('');
+  const [sensorDate, setSensorDate] = useState<string>(() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  });
   const [sensorData, setSensorData] = useState<any>(null);
   const [loadingSensorData, setLoadingSensorData] = useState(false);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
@@ -37,18 +41,21 @@ export default function AdminDashboard() {
     loadData();
   }, [selectedZone]);
 
-  // Load sensor data when bathroom is selected or tab changes
+  // Load sensor data when bathroom, date, or tab changes
   useEffect(() => {
     if (selectedSensorBathroom && activeTab === 'sensors') {
-      loadSensorData(selectedSensorBathroom);
+      loadSensorData(selectedSensorBathroom, sensorDate);
     }
-  }, [selectedSensorBathroom, activeTab]);
+  }, [selectedSensorBathroom, activeTab, sensorDate]);
 
-  const loadSensorData = async (bathroomId: string) => {
+  const loadSensorData = async (bathroomId: string, dateStr?: string) => {
     setLoadingSensorData(true);
     setSelectedTime(null); // Reset selected time when loading new data
     try {
-      const response = await fetch(`/api/sensor-data/${bathroomId}?t=${Date.now()}`, {
+      const url = dateStr
+        ? `/api/sensor-data/${bathroomId}?date=${encodeURIComponent(dateStr)}&t=${Date.now()}`
+        : `/api/sensor-data/${bathroomId}?t=${Date.now()}`;
+      const response = await fetch(url, {
         cache: 'no-store',
       });
       if (!response.ok) {
@@ -102,7 +109,7 @@ export default function AdminDashboard() {
       setSelectedTime(null);
       
       // Fetch fresh data from database
-      await loadSensorData(bathroomId);
+      await loadSensorData(bathroomId, sensorDate);
       
       // Wait a moment for state to update, then check
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -501,13 +508,13 @@ export default function AdminDashboard() {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">📊 Sensor Data Dashboard</h2>
               <p className="text-gray-700 mb-4">
-                View sensor readings over the past 24 hours for predictive maintenance
+                View sensor readings for a specific day or the past 24 hours for predictive maintenance
               </p>
               
-              {/* Bathroom Selector */}
+              {/* Bathroom + Date Selector */}
               <div className="mb-6">
-                <div className="flex flex-col md:flex-row gap-4 items-end">
-                  <div className="flex-1">
+                <div className="flex flex-col md:flex-row gap-4 items-end flex-wrap">
+                  <div className="flex-1 min-w-[200px]">
                     <label className="block text-sm font-semibold mb-2 text-gray-900">Select Bathroom:</label>
                     <select
                       value={selectedSensorBathroom}
@@ -524,6 +531,25 @@ export default function AdminDashboard() {
                         ))}
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-gray-900">Date:</label>
+                    <input
+                      type="date"
+                      value={sensorDate}
+                      onChange={(e) => setSensorDate(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      setSensorDate(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+                    }}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:border-gray-500 font-medium whitespace-nowrap"
+                  >
+                    Today
+                  </button>
                   {selectedSensorBathroom && (
                     <button
                       onClick={() => generateSensorData(selectedSensorBathroom)}
@@ -579,7 +605,7 @@ export default function AdminDashboard() {
                     <div className="mb-6">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-semibold">
-                          Sensor Readings (Past 24 Hours) - {sensorData.graphData.length} data points
+                          Sensor Readings{sensorDate ? ` — ${sensorDate}` : ' (Past 24 Hours)'} — {sensorData.graphData.length} data points
                         </h3>
                         {sensorData.debug && (
                           <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -675,7 +701,7 @@ export default function AdminDashboard() {
                     </div>
                   ) : (
                     <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
-                      <p>No sensor data available for the past 24 hours</p>
+                      <p>No sensor data available{sensorDate ? ` for ${sensorDate}` : ' for the past 24 hours'}</p>
                     </div>
                   )}
 
@@ -854,7 +880,7 @@ export default function AdminDashboard() {
 
               {!loadingSensorData && !sensorData && selectedSensorBathroom && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-                  <p className="font-semibold mb-2">No sensor data available for this bathroom in the past 24 hours.</p>
+                  <p className="font-semibold mb-2">No sensor data available for this bathroom{sensorDate ? ` on ${sensorDate}` : ' in the past 24 hours'}.</p>
                   <p className="text-sm">To generate sensor data, run the SQL function in Supabase:</p>
                   <code className="block mt-2 p-2 bg-yellow-100 rounded text-xs">
                     SELECT generate_sensor_data_for_bathroom('{selectedSensorBathroom}');

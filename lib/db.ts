@@ -61,6 +61,24 @@ interface DbMaintenanceTask {
   updated_at: string;
 }
 
+/**
+ * Parse timestamp from DB (e.g. "2026-01-26 00:01:29.558506+00") to milliseconds.
+ * Normalizes PostgreSQL format (space, +00) to ISO 8601 so Date parses reliably.
+ */
+function parseDbTimestamp(createdAt: string): number {
+  if (!createdAt) return 0;
+  let s = String(createdAt).trim();
+  // Replace space between date and time with 'T' for ISO 8601
+  if (/^\d{4}-\d{2}-\d{2} \d/.test(s)) {
+    s = s.replace(' ', 'T');
+  }
+  // Expand +00 / -05 etc. (2-digit TZ without colon) to +00:00 / -05:00 for reliable parsing
+  if (/[+-]\d{2}$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s)) {
+    s = s.replace(/([+-])(\d{2})$/, '$1$2:00');
+  }
+  return new Date(s).getTime();
+}
+
 // Helper to convert DB bathroom to app bathroom
 function dbBathroomToBathroom(db: DbBathroom): Bathroom {
   return {
@@ -68,7 +86,7 @@ function dbBathroomToBathroom(db: DbBathroom): Bathroom {
     zone: db.zone,
     type: db.type,
     hasSensor: db.sensor_attached,
-    lastVerifiedAt: db.last_verified_at ? new Date(db.last_verified_at).getTime() : null,
+    lastVerifiedAt: db.last_verified_at ? parseDbTimestamp(db.last_verified_at) : null,
     score: db.health_score,
     status: db.status as BathroomStatus,
     location: db.location,
@@ -82,7 +100,7 @@ function dbVerificationToVerification(db: DbVerification): VolunteerVerification
     waterAvailable: db.water_available,
     clogged: db.clogged,
     usable: db.usable,
-    timestamp: new Date(db.created_at).getTime(),
+    timestamp: parseDbTimestamp(db.created_at),
     volunteerName: db.volunteer_id || undefined,
   };
 }
@@ -92,7 +110,7 @@ function dbSignalToSignal(db: DbResidentSignal): ResidentSignal {
   return {
     bathroomId: db.bathroom_id,
     signal: db.signal,
-    timestamp: new Date(db.created_at).getTime(),
+    timestamp: parseDbTimestamp(db.created_at),
   };
 }
 
@@ -108,7 +126,7 @@ function dbSensorToSensor(db: DbSensorReading): SensorReading {
     gasType: db.gas_type || undefined,
     value: Number(db.value),
     unit: db.unit || (sensorType === 'gas' ? 'ppm' : sensorType === 'water' ? 'L/min' : '%'),
-    timestamp: new Date(db.created_at).getTime(),
+    timestamp: parseDbTimestamp(db.created_at),
   };
 }
 
@@ -121,8 +139,8 @@ function dbMaintenanceToMaintenance(db: DbMaintenanceTask): MaintenanceRequest {
     contactName: db.contact_info || undefined,
     contactPhone: db.contact_info || undefined,
     status: db.status,
-    createdAt: new Date(db.created_at).getTime(),
-    resolvedAt: db.resolved_at ? new Date(db.resolved_at).getTime() : undefined,
+    createdAt: parseDbTimestamp(db.created_at),
+    resolvedAt: db.resolved_at ? parseDbTimestamp(db.resolved_at) : undefined,
   };
 }
 
@@ -531,6 +549,35 @@ export async function getSensorReadingsByBathroom(bathroomId: string): Promise<S
     console.log(`[DB] Readings by type:`, byType);
   }
   
+  return data.map(dbSensorToSensor);
+}
+
+/**
+ * Fetch sensor readings for a bathroom for a specific calendar day (UTC).
+ * @param bathroomId - Bathroom id
+ * @param dateStr - Date as YYYY-MM-DD (treated as UTC day boundaries)
+ */
+export async function getSensorReadingsByBathroomForDate(bathroomId: string, dateStr: string): Promise<SensorReading[]> {
+  const startOfDay = new Date(dateStr + 'T00:00:00.000Z');
+  const endOfDay = new Date(dateStr + 'T23:59:59.999Z');
+  const fromIso = startOfDay.toISOString();
+  const toIso = endOfDay.toISOString();
+
+  const { data, error } = await supabase
+    .from('sensor_readings')
+    .select('*')
+    .eq('bathroom_id', bathroomId)
+    .gte('created_at', fromIso)
+    .lte('created_at', toIso)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(`[DB] Error fetching sensor readings for ${bathroomId} on ${dateStr}:`, error);
+    return [];
+  }
+
+  if (!data) return [];
+  console.log(`[DB] Fetched ${data.length} sensor readings for ${bathroomId} on ${dateStr}`);
   return data.map(dbSensorToSensor);
 }
 
