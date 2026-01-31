@@ -1,6 +1,8 @@
 # SanoCheck – Smart Sanitation Verification & Dispatch System
 
-A hybrid sanitation verification platform for humanitarian contexts that maintains a trusted, continuously updated list of usable toilets. SanoCheck combines rule-based health scoring, volunteer verification, and sensor data to prioritize inspections, dispatch maintenance, and provide inclusive access to sanitation information.
+SanoCheck is a hybrid sanitation verification platform for humanitarian contexts that maintains a trusted, continuously updated list of usable toilets. It combines rule‑based health scoring, volunteer verification, **community feedback**, and **sensor data (historical + real‑time)** to prioritize inspections, dispatch maintenance, and provide inclusive, transparent sanitation information to residents and responders.
+
+Built as an MVP for the **CMUQ Lifelines 2026 Hackathon**.
 
 ---
 
@@ -8,33 +10,125 @@ A hybrid sanitation verification platform for humanitarian contexts that maintai
 
 ### Health Scoring (0–3, Explainable)
 
-* Whole-number, rule-based scoring (no ML)
-* Inputs: volunteer verification, sensor readings, time decay
-* Statuses: `verified_usable`, `flagged`, `verified_unusable`
-* Volunteer decisions are authoritative
+* Whole‑number, rule‑based scoring (**no ML**)
+* Inputs:
 
-### Interfaces
+  * Volunteer verification (authoritative)
+  * Sensor readings (gas, water, humidity)
+  * **Community feedback (resident usable / not usable)**
+  * Time decay
+* Statuses:
 
-* **Admin / Volunteer (`/admin`)**: verification queue, maintenance dispatch, sensor dashboards, full registry
-* **Public Display (`/public`)**: read-only view, search, favorites (localStorage), zone grouping
-* **Demo Mode (`/demo`)**: interactive simulations (time decay, sensors, verification)
-* **Chatbot (`/chatbot`)**: read-only assistant for location and status queries
+  * `verified_usable`
+  * `flagged`
+  * `verified_unusable`
+* Volunteer decisions override all other signals
 
-### Sensor Visualization
+### Community Feedback Loop (NEW)
 
-* 24-hour hourly readings (gas, water, humidity)
-* Interactive Recharts graphs
-* Per-sensor filtering and averages
+* Lightweight **resident phone view** for quick feedback
+* Residents can mark bathrooms as usable / not usable
+* Feedback contributes to:
+
+  * Temporary score penalties
+  * Automatic **flagging for volunteer verification**
+* Designed for low‑bandwidth, high‑trust environments
+
+---
+
+## Interfaces
+
+### Admin / Volunteer (`/admin`)
+
+* Verification queue (volunteer + community‑flagged)
+* Maintenance dispatch & resolution workflow
+* Sensor dashboards (historical + real‑time)
+* Full bathroom registry
+* **Insights dashboard highlighting:**
+
+  * Service gaps
+  * Usage frequency
+  * Urgent hygiene needs
+  * Overcrowded or under‑served zones
+
+### Public Display (`/public`)
+
+* Read‑only bathroom registry
+* Search & zone grouping
+* Favorites (stored via `localStorage`)
+* **Interactive map view** with color‑coded bathroom status
+* Designed for info boards and shared displays
+
+### Resident Phone View (`/resident`) (NEW)
+
+* Simple mobile‑friendly interface
+* Submit bathroom feedback (usable / not usable)
+* View nearby bathrooms and current status
+
+### Demo Mode (`/demo`)
+
+* Interactive simulations:
+
+  * Time decay
+  * Sensor spikes
+  * Real‑time sensor streaming
+* Useful for live demos and stakeholder walkthroughs
+
+### Chatbot (`/chatbot`)
+
+* Read‑only assistant
+* Answers location, availability, and status queries
+
+---
+
+## Sensor Visualization
+
+### Historical Sensor Data (NEW)
+
+* View **previously loaded sensor data**
+* Date selector (calendar‑based)
+* 24‑hour, hourly resolution
+
+### Real‑Time Sensor Data (NEW)
+
+* Live updating sensor graphs for demo purposes
+* Demonstrates active sensor connectivity
+
+### Metrics
+
+* Gas levels
+* Water availability
+* Humidity
+
+### Charts
+
+* Interactive **Recharts** graphs
+* Per‑sensor filtering
+* Averages & trends
+
+---
+
+## Mapping & Spatial Insights (NEW)
+
+* Interactive map showing all toilets
+* Color‑coded by health status
+* **Heatmaps** highlighting:
+
+  * Overcrowded bathrooms
+  * Under‑serviced areas
+  * Sanitation gaps
+* Area maps integrated into public info boards for residents
 
 ---
 
 ## Tech Stack
 
-* **Frontend**: Next.js 14 (App Router), TypeScript
-* **Backend / DB**: Supabase (PostgreSQL, RLS, Edge Functions)
-* **Styling**: TailwindCSS, shadcn/ui
-* **Charts**: Recharts
-* **Deployment**: Vercel
+* **Frontend:** Next.js 14 (App Router), TypeScript
+* **Backend / DB:** Supabase (PostgreSQL, RLS, Edge Functions)
+* **Styling:** TailwindCSS, shadcn/ui
+* **Charts:** Recharts
+* **Maps:** Map-based visualization (demo integration)
+* **Deployment:** Vercel
 
 ---
 
@@ -53,91 +147,151 @@ cd SanoCheck
 npm install
 ```
 
-### Supabase
+### Supabase Setup
 
-1. Create a project
-2. Run `supabase/schema.sql`
-3. (Optional) Seed demo data: `supabase/seed.sql`
-4. (Optional) Seed sensor data: `supabase/seed_sensor_data.sql`
+1. Create a new Supabase project
+2. Run:
+
+   ```sql
+   supabase/schema.sql
+   ```
+3. (Optional) Seed demo data:
+
+   ```sql
+   supabase/seed.sql
+   ```
+4. (Optional) Seed sensor data:
+
+   ```sql
+   supabase/seed_sensor_data.sql
+   ```
 
 ### Environment Variables (`.env.local`)
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...   # Required: get from Dashboard → API → service_role (secret)
+SUPABASE_SERVICE_ROLE_KEY=...   # Required: Dashboard → API → service_role (secret)
 ```
 
-**Verification not persisting / scores reset on refresh?** The API requires `SUPABASE_SERVICE_ROLE_KEY` for all bathroom reads and writes. Add it to `.env.local`, then **restart the dev server** (`npm run dev`). Without it, RLS blocks persistence.
+⚠️ **Important**
+If verifications or scores reset on refresh, the `SUPABASE_SERVICE_ROLE_KEY` is missing. All bathroom reads/writes require it due to RLS. Restart the dev server after adding it.
 
-### Run
+---
+
+## Run
 
 ```bash
 npm run dev
 ```
 
-App runs at `http://localhost:3000`.
+App runs at: **[http://localhost:3000](http://localhost:3000)**
 
-### Testing
+---
 
-* Use the Admin dashboard to submit verifications and maintenance requests
-* Demo mode allows simulated sensor spikes and time decay
-* Public page validates read-only access and search functionality
+## Testing
+
+* Use the Admin dashboard to:
+
+  * Submit volunteer verifications
+  * Review community feedback flags
+  * Create & resolve maintenance requests
+* Demo mode:
+
+  * Simulate sensor changes
+  * Stream real‑time sensor data
+  * Trigger time decay
+* Public & resident views:
+
+  * Validate read‑only access
+  * Test maps, heatmaps, and search
 
 ---
 
 ## Health Scoring Summary
 
-* **Base score**: 3
-* **Volunteer verification**:
+**Base score:** 3
 
-  * Mark unusable → score 0, `verified_unusable`
-  * Recent verification (<24h) prevents decay
-* **Sensors (0–100%)**:
+### Volunteer Verification
 
-  * Gas high → penalty
-  * Water low → penalty
-  * Humidity outside 30–60% → penalty
-* **Time decay**: score drops without re-verification
+* Mark unusable → score = 0, status = `verified_unusable`
+* Recent verification (< 24h) prevents decay
 
-**Status rules**:
+### Community Feedback
 
-1. Volunteer marked unusable → `verified_unusable`
-2. Score < 2 → `flagged`
-3. Otherwise → `verified_usable`
+* Repeated negative feedback applies penalties
+* Automatically flags bathroom for volunteer review
+
+### Sensors (0–100%)
+
+* High gas → penalty
+* Low water → penalty
+* Humidity outside 30–60% → penalty
+
+### Time Decay
+
+* Score decreases without re‑verification
+
+### Status Rules
+
+* Volunteer marked unusable → `verified_unusable`
+* Score < 2 → `flagged`
+* Otherwise → `verified_usable`
 
 ---
 
 ## API Overview
 
-* **Bathrooms**: `GET /api/bathrooms`, `GET /api/bathrooms/[id]`
-* **Verification**: `POST /api/verification`
-* **Sensor Data**: `GET /api/sensor-data/[id]`
-* **Maintenance**: `GET/POST /api/maintenance`, `PUT /api/maintenance/[id]`
-* **Rankings**: `GET /api/rankings?zone=A`
-* **Demo**: time decay and sensor simulation endpoints
-* **Recalculate**: `GET /api/recalculate`
+* **Bathrooms:**
+
+  * `GET /api/bathrooms`
+  * `GET /api/bathrooms/[id]`
+* **Verification:**
+
+  * `POST /api/verification`
+* **Community Feedback:**
+
+  * `POST /api/feedback`
+* **Sensor Data:**
+
+  * `GET /api/sensor-data/[id]`
+  * Real‑time demo endpoints
+* **Maintenance:**
+
+  * `GET /api/maintenance`
+  * `POST /api/maintenance`
+  * `PUT /api/maintenance/[id]`
+* **Rankings:**
+
+  * `GET /api/rankings?zone=A`
+* **Recalculate Scores:**
+
+  * `GET /api/recalculate`
 
 ---
 
 ## Database (Key Tables)
 
-* **bathrooms**: metadata, health score (0–3), status
-* **verifications**: volunteer checks
-* **sensor_readings**: gas, water, humidity (percentages)
-* **maintenance_tasks**: issue tracking and resolution
+* `bathrooms` – metadata, health score (0–3), status
+* `verifications` – volunteer checks
+* `feedback` – resident usability reports
+* `sensor_readings` – gas, water, humidity (percentages)
+* `maintenance_tasks` – issue tracking & resolution
 
-RLS enabled; public read, service role for writes.
+RLS enabled:
+
+* Public read access
+* Service role required for writes
 
 ---
 
 ## Project Structure (Simplified)
 
 ```
-app/        # Pages & API routes
-lib/        # DB, scoring, utilities
-components/ # UI components
-supabase/   # Schema & seeds
+app/         # Pages & API routes
+lib/         # DB, scoring, utilities
+components/  # UI components
+supabase/    # Schema & seeds
 ```
 
 ---
@@ -146,23 +300,24 @@ supabase/   # Schema & seeds
 
 1. Push to GitHub
 2. Import into Vercel
-3. Add Supabase env vars
+3. Add Supabase environment variables
 4. Deploy
 
 ---
 
 ## Production Extensions
 
-* Supabase Auth & role-based access
-* Realtime updates & notifications
+* Supabase Auth & role‑based access
+* Realtime alerts & notifications
 * Mobile app (React Native)
-* Analytics & maintenance insights
+* Advanced analytics & maintenance forecasting
+* Offline‑first resident feedback
 
 ---
 
 ## Credits
 
-Built using the following open-source technologies:
+Built using open‑source technologies:
 
 * Next.js
 * Supabase
@@ -171,10 +326,30 @@ Built using the following open-source technologies:
 * Recharts
 * Vercel
 
-Design inspiration drawn from WHO accessibility and information design standards.
+Design inspiration drawn from **WHO accessibility and information design standards**.
+
+---
 
 ## License
 
-Built as an MVP for the **CMUQ Lifelines 2026 Hackathon**.
+MIT License
 
-**Built with ❤️ for better sanitation access**
+Copyright (c) 2026 SanoCheck
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
