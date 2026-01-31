@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bathroom } from '@/lib/types';
+import BathroomMapView from '@/components/BathroomMapView';
 
 export default function PublicDashboard() {
   const [bathrooms, setBathrooms] = useState<Bathroom[]>([]);
   const [allBathrooms, setAllBathrooms] = useState<Bathroom[]>([]);
+  /** All bathrooms from API (for map: green/yellow/red by status) */
+  const [allBathroomsForMap, setAllBathroomsForMap] = useState<Bathroom[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [zones, setZones] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -91,12 +94,11 @@ export default function PublicDashboard() {
       cache: 'no-store',
     });
     const data = await res.json();
-    // Filter to only show usable bathrooms
+    if (!Array.isArray(data)) return;
+    setAllBathroomsForMap(data);
     const usable = data.filter((b: Bathroom) => b.status === 'verified_usable');
     setAllBathrooms(usable);
     setLastUpdated(new Date());
-    
-    // Filter will be applied by useEffect
   };
 
   const getTypeLabel = (type: Bathroom['type']) => {
@@ -147,6 +149,15 @@ export default function PublicDashboard() {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Map view: demo toilets by zone, color by status (Supabase) */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">🗺️ Map — Toilets by zone</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Demo toilets and where they are by zone. Colors reflect actual status from the database (green = usable, yellow = flagged, red = not usable).
+          </p>
+          <BathroomMapView bathrooms={allBathroomsForMap} showLabels />
         </div>
 
         {/* Disclaimer Banner */}

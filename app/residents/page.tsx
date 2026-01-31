@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bathroom } from '@/lib/types';
+import BathroomMapView from '@/components/BathroomMapView';
 
 const FAVORITES_KEY = 'sanoCheck_residents_favorites';
 
 export default function ResidentsDashboard() {
   const [bathrooms, setBathrooms] = useState<Bathroom[]>([]);
   const [allBathrooms, setAllBathrooms] = useState<Bathroom[]>([]);
+  /** All bathrooms from API (for map: green/yellow/red by status) */
+  const [allBathroomsForMap, setAllBathroomsForMap] = useState<Bathroom[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [zones, setZones] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -85,6 +88,8 @@ export default function ResidentsDashboard() {
   const loadBathrooms = async () => {
     const res = await fetch(`/api/bathrooms?t=${Date.now()}`, { cache: 'no-store' });
     const data = await res.json();
+    if (!Array.isArray(data)) return;
+    setAllBathroomsForMap(data);
     const usable = data.filter((b: Bathroom) => b.status === 'verified_usable');
     setAllBathrooms(usable);
     setLastUpdated(new Date());
@@ -233,6 +238,15 @@ export default function ResidentsDashboard() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Map view: toilets by zone, color by status (Supabase) */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">🗺️ Map — Toilets by zone</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Toilets by zone. Colors reflect actual status from the database (green = usable, yellow = flagged, red = not usable).
+          </p>
+          <BathroomMapView bathrooms={allBathroomsForMap} showLabels />
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">

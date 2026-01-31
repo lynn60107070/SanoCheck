@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Bathroom, BathroomWithUsage, MaintenanceRequest, LiveSensorLogPoint, ZoneCoverageItem, CoverageStatus } from '@/lib/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import BathroomMapView from '@/components/BathroomMapView';
 
 export default function AdminDashboard() {
   const [bathrooms, setBathrooms] = useState<Bathroom[]>([]);
@@ -702,6 +703,15 @@ export default function AdminDashboard() {
               ) : (
                 <p className="text-gray-500 text-sm">Loading zone coverage…</p>
               )}
+            </div>
+
+            {/* Map: same 4-zone map, zone background reflects zone coverage + legend */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">🗺️ Map — Toilets by zone</h2>
+              <p className="text-sm text-gray-600 mb-3">
+                Zone background color reflects zone coverage (adequate / strained / critical). Toilet circles show status (usable / flagged / not usable).
+              </p>
+              <BathroomMapView bathrooms={bathrooms} zoneCoverage={zoneCoverage} showLabels />
             </div>
 
             {/* Zone Filter + High Usage + Low Health filter */}
