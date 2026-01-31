@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { getSensorReadingsByBathroom, getSensorReadingsByBathroomForDate } from '@/lib/db';
 import { SensorReading } from '@/lib/types';
 
+interface GraphDataPoint {
+  timestamp: number;
+  time: string;
+  gas: number | null;
+  gasRaw: number | null;
+  water: number | null;
+  waterRaw: number | null;
+  humidity: number | null;
+  humidityRaw: number | null;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -64,7 +75,7 @@ export async function GET(
     
     // Prepare data for graph
     // All values are already stored as percentages (0-100%)
-    const graphData = [];
+    const graphData: GraphDataPoint[] = [];
     const allTimestamps = new Set<number>();
     
     gasReadings.forEach(r => allTimestamps.add(r.timestamp));

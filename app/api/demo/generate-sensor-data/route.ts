@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     ];
 
     // Generate 24 hourly readings going back 24 hours from now
-    const readings = [];
+    const readings: Array<{ bathroom_id: string; sensor_type: string; gas_type?: string; value: number; unit: string; created_at: string }> = [];
     for (let hour = 0; hour < 24; hour++) {
       // Calculate timestamp: go back 23 hours, then 22, then 21... to 0 hours ago
       const hoursAgo = 23 - hour;

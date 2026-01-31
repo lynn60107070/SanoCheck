@@ -27,8 +27,8 @@ export function initializeStore() {
       type: 'male',
       hasSensor: true,
       lastVerifiedAt: Date.now() - 2 * 24 * 60 * 60 * 1000, // 2 days ago
-      score: 85,
-      status: 'usable',
+      score: 3,
+      status: 'verified_usable',
       location: 'Main building, ground floor',
     },
     {
@@ -37,8 +37,8 @@ export function initializeStore() {
       type: 'female',
       hasSensor: false,
       lastVerifiedAt: Date.now() - 5 * 24 * 60 * 60 * 1000, // 5 days ago
-      score: 60,
-      status: 'needs_check',
+      score: 2,
+      status: 'flagged',
       location: 'Main building, first floor',
     },
     {
@@ -47,8 +47,8 @@ export function initializeStore() {
       type: 'accessible',
       hasSensor: true,
       lastVerifiedAt: Date.now() - 1 * 24 * 60 * 60 * 1000, // 1 day ago
-      score: 90,
-      status: 'usable',
+      score: 3,
+      status: 'verified_usable',
       location: 'Main building, ground floor',
     },
     {
@@ -57,7 +57,7 @@ export function initializeStore() {
       type: 'male',
       hasSensor: true,
       lastVerifiedAt: null,
-      score: 30,
+      score: 1,
       status: 'flagged',
       location: 'Secondary building, ground floor',
     },
@@ -67,8 +67,8 @@ export function initializeStore() {
       type: 'female',
       hasSensor: false,
       lastVerifiedAt: Date.now() - 10 * 24 * 60 * 60 * 1000, // 10 days ago
-      score: 15,
-      status: 'unusable',
+      score: 0,
+      status: 'verified_unusable',
       location: 'Secondary building, first floor',
     },
     {
@@ -77,8 +77,8 @@ export function initializeStore() {
       type: 'accessible',
       hasSensor: false,
       lastVerifiedAt: Date.now() - 3 * 24 * 60 * 60 * 1000, // 3 days ago
-      score: 75,
-      status: 'needs_check',
+      score: 2,
+      status: 'flagged',
       location: 'Clinic building',
     },
   ];
@@ -130,16 +130,16 @@ export function recalculateAllScores() {
     );
     const latestSensorReading = sensorMap.get(bathroom.id) || null;
 
-    const { score, status } = calculateBathroomScore(
+    const { healthScore, status } = calculateBathroomScore(
       bathroom,
       latestVerification,
       recentSignals,
-      latestSensorReading
+      latestSensorReading ? [latestSensorReading] : []
     );
 
     return {
       ...bathroom,
-      score,
+      score: healthScore,
       status,
     };
   });

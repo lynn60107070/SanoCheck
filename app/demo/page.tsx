@@ -239,22 +239,25 @@ export default function DemoMode() {
   };
 
   const getStatusBadge = (status: Bathroom['status']) => {
-    const styles = {
+    const styles: Record<string, string> = {
       verified_usable: 'bg-green-100 text-green-800',
       flagged: 'bg-orange-100 text-orange-800',
       verified_unusable: 'bg-red-100 text-red-800',
     };
-    const labels = {
+    const labels: Record<string, string> = {
       verified_usable: '✅ Verified usable',
       flagged: '🚩 Flagged',
       verified_unusable: '❌ Verified unusable',
     };
+    const s = status && (status in styles) ? status : 'flagged';
     return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${styles[status]}`}>
-        {labels[status]}
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${styles[s]}`}>
+        {labels[s] ?? '🚩 Flagged'}
       </span>
     );
   };
+
+  const displayScore = (score: number) => Math.min(3, Math.max(0, Math.round(Number(score))));
 
   const getScoreColor = (score: number) => {
     // 0-3 scale: 3 = green, 2 = yellow, 1 = orange, 0 = red
@@ -275,6 +278,7 @@ export default function DemoMode() {
               <Link href="/" className="hover:underline">Home</Link>
               <Link href="/admin" className="hover:underline">Admin</Link>
               <Link href="/public" className="hover:underline">Public</Link>
+              <Link href="/residents" className="hover:underline">Residents</Link>
               <Link href="/chatbot" className="hover:underline">Chatbot</Link>
             </nav>
           </div>
@@ -319,7 +323,7 @@ export default function DemoMode() {
             >
               {bathrooms.map(bathroom => (
                 <option key={bathroom.id} value={bathroom.id}>
-                  {bathroom.id} - Zone {bathroom.zone} (Score: {bathroom.score}/3)
+                  {bathroom.id} - Zone {bathroom.zone} (Score: {displayScore(bathroom.score)}/3)
                 </option>
               ))}
             </select>
@@ -432,7 +436,7 @@ export default function DemoMode() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Current Bathroom States</h2>
             <button
-              onClick={loadBathrooms}
+              onClick={() => loadBathrooms()}
               disabled={isLoading}
               className="px-3 py-1 text-blue-600 border border-gray-300 rounded text-sm hover:border-blue-600 disabled:opacity-50"
             >
@@ -458,8 +462,8 @@ export default function DemoMode() {
                   >
                     <td className="p-2 font-semibold">{bathroom.id}</td>
                     <td className="p-2">Zone {bathroom.zone}</td>
-                    <td className={`p-2 font-bold ${getScoreColor(bathroom.score)}`}>
-                      {bathroom.score}
+                    <td className={`p-2 font-bold ${getScoreColor(displayScore(bathroom.score))}`}>
+                      {displayScore(bathroom.score)}/3
                     </td>
                     <td className="p-2">{getStatusBadge(bathroom.status)}</td>
                     <td className="p-2 text-sm">
@@ -476,10 +480,12 @@ export default function DemoMode() {
 
         {/* Footer Navigation */}
         <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <div className="flex justify-center gap-4 text-sm">
-            <Link href="/admin" className="text-blue-600 hover:underline">👷 Admin Dashboard</Link>
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-sm">
+            <Link href="/admin" className="text-blue-600 hover:underline">👷 Admin</Link>
             <span className="text-gray-400">•</span>
-            <Link href="/public" className="text-blue-600 hover:underline">📺 Public Display</Link>
+            <Link href="/public" className="text-blue-600 hover:underline">📺 Public</Link>
+            <span className="text-gray-400">•</span>
+            <Link href="/residents" className="text-blue-600 hover:underline">📱 Residents</Link>
             <span className="text-gray-400">•</span>
             <Link href="/chatbot" className="text-blue-600 hover:underline">🤖 Chatbot</Link>
             <span className="text-gray-400">•</span>

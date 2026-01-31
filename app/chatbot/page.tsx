@@ -31,7 +31,8 @@ export default function Chatbot() {
           botResponse = 'Sorry, there are no verified usable bathrooms at this time. Please check back later or contact an administrator.';
         } else {
           const nearest = usable[0]; // Simplified - would use actual location in production
-          botResponse = `The nearest verified usable bathroom is ${nearest.id} in Zone ${nearest.zone}. ${nearest.location || ''} It has a health score of ${nearest.score}/3.`;
+          const score = Math.min(3, Math.max(0, Math.round(Number(nearest.score))));
+          botResponse = `The nearest verified usable bathroom is ${nearest.id} in Zone ${nearest.zone}. ${nearest.location || ''} It has a health score of ${score}/3.`;
         }
       } catch (error) {
         botResponse = 'I encountered an error. Please try again later.';
@@ -45,7 +46,7 @@ export default function Chatbot() {
         if (top3.length === 0) {
           botResponse = 'There are no bathrooms that need checking at this time.';
         } else {
-          botResponse = `Today, you should check: ${top3.map((b: any) => `${b.id} (Score: ${b.score})`).join(', ')}. These bathrooms have the lowest health scores and need verification.`;
+          botResponse = `Today, you should check: ${top3.map((b: any) => `${b.id} (Score: ${Math.min(3, Math.max(0, Math.round(Number(b.score))))}/3)`).join(', ')}. These bathrooms have the lowest health scores and need verification.`;
         }
       } catch (error) {
         botResponse = 'I encountered an error. Please try again later.';
@@ -70,6 +71,7 @@ export default function Chatbot() {
               <Link href="/" className="hover:underline">Home</Link>
               <Link href="/admin" className="hover:underline">Admin</Link>
               <Link href="/public" className="hover:underline">Public</Link>
+              <Link href="/residents" className="hover:underline">Residents</Link>
               <Link href="/demo" className="hover:underline">Demo</Link>
             </nav>
           </div>
@@ -122,12 +124,14 @@ export default function Chatbot() {
 
         {/* Footer Navigation */}
         <div className="pt-6 border-t border-gray-200 text-center">
-          <div className="flex justify-center gap-4 text-sm">
-            <Link href="/admin" className="text-blue-600 hover:underline">👷 Admin Dashboard</Link>
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-sm">
+            <Link href="/admin" className="text-blue-600 hover:underline">👷 Admin</Link>
             <span className="text-gray-400">•</span>
-            <Link href="/public" className="text-blue-600 hover:underline">📺 Public Display</Link>
+            <Link href="/public" className="text-blue-600 hover:underline">📺 Public</Link>
             <span className="text-gray-400">•</span>
-            <Link href="/demo" className="text-blue-600 hover:underline">🎬 Demo Mode</Link>
+            <Link href="/residents" className="text-blue-600 hover:underline">📱 Residents</Link>
+            <span className="text-gray-400">•</span>
+            <Link href="/demo" className="text-blue-600 hover:underline">🎬 Demo</Link>
             <span className="text-gray-400">•</span>
             <Link href="/" className="text-gray-700 hover:underline">🏠 Home</Link>
           </div>

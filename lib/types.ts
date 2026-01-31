@@ -8,10 +8,31 @@ export interface Bathroom {
   zone: string;
   type: BathroomType;
   hasSensor: boolean;
+  high_traffic?: boolean;
   lastVerifiedAt: number | null; // timestamp
   score: number; // 0-3 (whole numbers only)
   status: BathroomStatus;
   location?: string; // optional description
+}
+
+/** Zone coverage (gaps) – derived per zone, no new table */
+export type CoverageStatus = 'adequate' | 'strained' | 'critical';
+
+export interface ZoneCoverageItem {
+  zone: string;
+  totalBathrooms: number;
+  usableBathrooms: number;
+  avgHealthScore: number;
+  coverageStatus: CoverageStatus;
+  alerts: string[];
+}
+
+/** Usage pressure 0–3 (not literal use counts); MVP-safe, explainable */
+export type UsageScoreLabel = 'High Use' | 'Moderate' | 'Low' | 'Unknown';
+
+export interface BathroomWithUsage extends Bathroom {
+  usageScore: number; // 0–3
+  usageLabel: UsageScoreLabel;
 }
 
 export interface VolunteerVerification {
@@ -73,6 +94,25 @@ export interface ScoringConfig {
   // Resident signals
   residentUsableBonus: number; // small bonus per confirmation
   residentUnusablePenalty: number;
+}
+
+/** Live sensor payload from ESP32 GET /live */
+export interface LiveSensorPayload {
+  timestamp: number;
+  humidity: number;
+  water: number;
+  gas: number;
+  status: string;
+}
+
+/** Row from live_sensor_logs for charts */
+export interface LiveSensorLogPoint {
+  time: string;
+  timestamp: number;
+  humidity: number | null;
+  water: number | null;
+  gas: number | null;
+  status: string;
 }
 
 // Default scoring configuration

@@ -65,8 +65,10 @@ npm install
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # Required: get from Dashboard → API → service_role (secret)
 ```
+
+**Verification not persisting / scores reset on refresh?** The API requires `SUPABASE_SERVICE_ROLE_KEY` for all bathroom reads and writes. Add it to `.env.local`, then **restart the dev server** (`npm run dev`). Without it, RLS blocks persistence.
 
 ### Run
 

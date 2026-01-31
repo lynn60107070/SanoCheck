@@ -11,6 +11,7 @@ export default function Home() {
             <nav className="flex gap-6 text-sm">
               <Link href="/admin" className="hover:underline">Admin</Link>
               <Link href="/public" className="hover:underline">Public</Link>
+              <Link href="/residents" className="hover:underline">Residents</Link>
               <Link href="/demo" className="hover:underline">Demo</Link>
               <Link href="/chatbot" className="hover:underline">Chatbot</Link>
             </nav>
@@ -26,7 +27,7 @@ export default function Home() {
           Verification & prioritization system for bathroom health monitoring
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link 
             href="/admin"
             className="p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-600 transition-colors"
@@ -41,6 +42,14 @@ export default function Home() {
           >
             <h2 className="text-2xl font-semibold mb-2 text-gray-900">📺 Public Display</h2>
             <p className="text-gray-700">Read-only view for public spaces</p>
+          </Link>
+          
+          <Link 
+            href="/residents"
+            className="p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-600 transition-colors"
+          >
+            <h2 className="text-2xl font-semibold mb-2 text-gray-900">📱 Residents</h2>
+            <p className="text-gray-700">Usable bathrooms, search & favorites — for residents with phone</p>
           </Link>
         </div>
         
